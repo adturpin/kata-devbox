@@ -1,6 +1,6 @@
-# Kata DevBox - C# / .NET
+# Kata DevBox - F# / .NET
 
-Environnement pour katas en C# avec .NET et NUnit.
+Environnement pour katas en F# avec .NET et NUnit.
 
 ---
 
@@ -31,17 +31,17 @@ PROJECT_NAME="Kata"  # Changer ici pour votre kata (ex: "FizzBuzz", "StringCalcu
 # 1. Lancer DevBox (si pas déjà dans le shell)
 devbox shell
 
-# 2. Créer le projet
+# 2. Créer le projet F#
 dotnet new sln -n $PROJECT_NAME
-dotnet new classlib -n $PROJECT_NAME.Core
-dotnet new nunit -n $PROJECT_NAME.Tests
+dotnet new classlib -lang F# -n $PROJECT_NAME.Core
+dotnet new nunit -lang F# -n $PROJECT_NAME.Tests
 dotnet sln add $PROJECT_NAME.Core $PROJECT_NAME.Tests
 cd $PROJECT_NAME.Tests && dotnet add reference ../$PROJECT_NAME.Core && cd ..
 
 # 3. Ajouter les packages de test
 cd $PROJECT_NAME.Tests
-dotnet add package Moq
-dotnet add package FluentAssertions
+dotnet add package FsUnit
+dotnet add package Unquote
 dotnet add package coverlet.collector
 cd ..
 
@@ -63,109 +63,130 @@ $PROJECT_NAME/
 
 ## ✏️ Exemple
 
-**Kata.Tests/CalculatorTests.cs**
-```csharp
-using NUnit.Framework;
-using FluentAssertions;
-using Kata.Core;
+**Kata.Tests/CalculatorTests.fs**
+```fsharp
+module Kata.Tests.CalculatorTests
 
-namespace Kata.Tests;
+open NUnit.Framework
+open FsUnit
+open Kata.Core
 
-[TestFixture]
-public class CalculatorTests
-{
-    [Test]
-    public void Add_TwoNumbers_ReturnsSum()
-    {
-        var calculator = new Calculator();
-        var result = calculator.Add(2, 3);
-        result.Should().Be(5);
-    }
-}
+[<Test>]
+let ``Add two numbers returns sum`` () =
+    let result = Calculator.add 2 3
+    result |> should equal 5
 ```
 
-**Kata.Core/Calculator.cs**
-```csharp
-namespace Kata.Core;
+**Kata.Core/Calculator.fs**
+```fsharp
+module Kata.Core.Calculator
 
-public class Calculator
-{
-    public int Add(int a, int b) => a + b;
-}
+let add a b = a + b
 ```
 
 ---
 
 ## 🧪 Guide des Outils
 
-### 1️⃣ NUnit - Framework de test
+### 1️⃣ NUnit + FsUnit - Framework de test
 
-```csharp
-[Test]
-public void SimpleTest() { }
+```fsharp
+open NUnit.Framework
+open FsUnit
 
-[TestCase(2, 3, 5)]
-[TestCase(0, 0, 0)]
-public void ParameterizedTest(int a, int b, int expected) { }
+[<Test>]
+let ``simple test`` () =
+    1 + 1 |> should equal 2
 
-[SetUp]
-public void BeforeEachTest() { }
+[<TestCase(2, 3, 5)>]
+[<TestCase(0, 0, 0)>]
+let ``parameterized test`` a b expected =
+    a + b |> should equal expected
 
-[Category("Fast")]
-public void CategorizedTest() { }
+[<SetUp>]
+let setup () =
+    // Avant chaque test
+    ()
+
+[<Category("Fast")>]
+let ``categorized test`` () =
+    true |> should be True
 ```
 
-### 2️⃣ FluentAssertions - Assertions lisibles
+### 2️⃣ FsUnit - Assertions idiomatiques F#
 
-```csharp
+```fsharp
 // Valeurs
-result.Should().Be(5);
-result.Should().BeGreaterThan(0);
+result |> should equal 5
+result |> should not' (equal 0)
+result |> should be (greaterThan 0)
+result |> should be (lessThan 10)
 
 // Chaînes
-name.Should().Be("Alice");
-name.Should().Contain("lic");
-name.Should().StartWith("Al");
+name |> should equal "Alice"
+name |> should contain "lic"
+name |> should startWith "Al"
+name |> should endWith "ce"
 
 // Collections
-list.Should().HaveCount(3);
-list.Should().Contain(x => x.Id == 1);
-list.Should().BeEmpty();
+list |> should haveLength 3
+list |> should contain 42
+list |> should be Empty
 
 // Exceptions
-Action act = () => throw new Exception();
-act.Should().Throw<Exception>();
+(fun () -> failwith "boom") |> should throw typeof<System.Exception>
 
-// Objets
-user.Should().BeEquivalentTo(new { Name = "Alice", Age = 30 });
+// Booléens
+result |> should be True
+result |> should be False
+
+// Null
+value |> should be Null
+value |> should not' (be Null)
 ```
 
-### 3️⃣ Moq - Mocks et stubs
+### 3️⃣ Unquote - Assertions quotées
 
-```csharp
-// Créer un mock
-var mock = new Mock<IUserRepository>();
+```fsharp
+open Swensen.Unquote
 
-// Setup : configurer le comportement
-mock.Setup(r => r.GetById(1))
-    .Returns(new User { Id = 1, Name = "Alice" });
+[<Test>]
+let ``unquote test`` () =
+    test <@ 2 + 2 = 4 @>
+    test <@ "hello".Length = 5 @>
 
-// Utiliser
-var service = new UserService(mock.Object);
-var user = service.GetUser(1);
-
-// Verify : vérifier les appels
-mock.Verify(r => r.GetById(1), Times.Once());
+// Affiche les valeurs intermédiaires en cas d'échec
+[<Test>]
+let ``detailed failure`` () =
+    let x = 5
+    let y = 3
+    test <@ x + y = 10 @>  // Montre: x = 5, y = 3, x + y = 8
 ```
 
-**Matchers utiles :**
-```csharp
-It.IsAny<int>()                    // N'importe quelle valeur
-It.Is<int>(x => x > 0)             // Condition
-It.IsInRange(1, 100, Range.Inclusive)
+### 4️⃣ Moq - Mocks (utilisable depuis F#)
+
+```fsharp
+open Moq
+
+[<Test>]
+let ``mock example`` () =
+    // Créer un mock
+    let mock = Mock<IUserRepository>()
+
+    // Setup
+    mock.Setup(fun m -> m.GetById(1))
+        .Returns({ Id = 1; Name = "Alice" })
+        |> ignore
+
+    // Utiliser
+    let user = mock.Object.GetById(1)
+    user.Name |> should equal "Alice"
+
+    // Verify
+    mock.Verify((fun m -> m.GetById(1)), Times.Once())
 ```
 
-### 4️⃣ SpecFlow - Tests BDD (optionnel)
+### 5️⃣ SpecFlow - Tests BDD (optionnel)
 
 **Installation :**
 ```bash
@@ -184,34 +205,32 @@ Scénario: Addition de deux nombres
   Alors le résultat est 5
 ```
 
-**StepDefinitions/CalculatorSteps.cs**
-```csharp
-[Binding]
-public class CalculatorSteps
-{
-    private int _result;
+**StepDefinitions/CalculatorSteps.fs**
+```fsharp
+module Kata.Tests.CalculatorSteps
 
-    [Given(@"les nombres (.*) et (.*)")]
-    public void GivenNombres(int a, int b)
-    {
-        // Setup
-    }
+open TechTalk.SpecFlow
+open FsUnit
+open Kata.Core
 
-    [When(@"je les additionne")]
-    public void WhenAddition()
-    {
-        _result = // calcul
-    }
+[<Binding>]
+type CalculatorSteps() =
+    let mutable result = 0
 
-    [Then(@"le résultat est (.*)")]
-    public void ThenResultat(int expected)
-    {
-        _result.Should().Be(expected);
-    }
-}
+    [<Given(@"les nombres (.*) et (.*)")>]
+    member _.GivenNombres(a: int, b: int) =
+        result <- a + b
+
+    [<When(@"je les additionne")>]
+    member _.WhenAddition() =
+        ()  // Déjà fait dans Given
+
+    [<Then(@"le résultat est (.*)")>]
+    member _.ThenResultat(expected: int) =
+        result |> should equal expected
 ```
 
-### 5️⃣ ApprovalTests - Tests de snapshot (optionnel)
+### 6️⃣ ApprovalTests - Tests de snapshot (optionnel)
 
 **Installation :**
 ```bash
@@ -219,19 +238,19 @@ dotnet add package ApprovalTests
 ```
 
 **Utilisation :**
-```csharp
-[Test]
-public void GenerateReport_ProducesCorrectOutput()
-{
-    var report = GenerateReport();
-    Approvals.Verify(report);
-}
+```fsharp
+open ApprovalTests
+
+[<Test>]
+let ``generate report produces correct output`` () =
+    let report = generateReport()
+    Approvals.Verify(report)
 ```
 
 Au premier run, crée un fichier `.received.txt`. Si OK, renommer en `.approved.txt`.
 Les runs suivants comparent avec `.approved.txt`.
 
-### 6️⃣ Coverlet - Couverture de code
+### 7️⃣ Coverlet - Couverture de code
 
 ```bash
 # Couverture simple
