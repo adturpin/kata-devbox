@@ -1,160 +1,270 @@
-# Kata DevBox 🥋
+# Kata DevBox - C# / .NET
 
-Bienvenue dans votre boîte à outils pour les kata et coding dojos ! 
-Ce repository contient l'essentiel pour démarrer rapidement vos sessions de pratique de code.
-
-## 📦 Concept
-
-Ce repository est organisé de manière simple et efficace :
-
-- **Branch `main`** : Contient les informations de base et la documentation des outils essentiels
-- **Autres branches** : Dédiées à des langages ou technologies spécifiques (Python, JavaScript, Rust, etc.)
-
-L'objectif est de vous permettre de démarrer un kata ou coding dojo en quelques commandes, sans perdre de temps en configuration.
-
-## 🛠️ Premier Outil : DevBox
-
-### Qu'est-ce que DevBox ?
-
-[DevBox](https://www.jetpack.io/devbox) est un outil de gestion d'environnements de développement isolés et reproductibles. Il vous permet de :
-
-- Créer des environnements de développement isolés par projet
-- Installer des outils et dépendances sans polluer votre système
-- Garantir que tous les membres d'une équipe utilisent les mêmes versions d'outils
-- Partager facilement des configurations d'environnement
-
-DevBox utilise [Nix](https://nixos.org/) sous le capot, mais vous n'avez pas besoin de connaître Nix pour l'utiliser.
-
-### Installation de DevBox
-
-#### Linux et macOS
-
-```bash
-curl -fsSL https://get.jetpack.io/devbox | bash
-```
-
-#### Windows (WSL2)
-
-Installez d'abord WSL2, puis exécutez la commande Linux ci-dessus.
-
-#### Vérification de l'installation
-
-```bash
-devbox version
-```
-
-### Concepts de Base
-
-#### 1. Initialiser un projet
-
-```bash
-# Créer un nouveau projet DevBox
-devbox init
-```
-
-Cette commande crée un fichier `devbox.json` qui contient la configuration de votre environnement.
-
-#### 2. Ajouter des packages
-
-```bash
-# Ajouter un langage ou un outil
-devbox add python3
-devbox add nodejs
-devbox add go
-
-# Rechercher des packages disponibles
-devbox search <nom-du-package>
-```
-
-#### 3. Entrer dans l'environnement
-
-```bash
-# Activer l'environnement DevBox
-devbox shell
-```
-
-Une fois dans le shell DevBox, tous les outils installés sont disponibles. 
-Votre prompt change pour indiquer que vous êtes dans un environnement DevBox.
-
-```bash
-# Vérifier que Python est disponible (si vous l'avez ajouté)
-python3 --version
-
-# Quitter l'environnement
-exit
-```
-
-#### 4. Exécuter une commande dans l'environnement
-
-```bash
-# Exécuter une commande sans entrer dans le shell
-devbox run python3 script.py
-```
-
-#### 5. Configurer des scripts personnalisés
-
-Éditez votre `devbox.json` pour ajouter des scripts :
-
-```json
-{
-  "packages": ["python3"],
-  "shell": {
-    "init_hook": [
-      "echo 'Bienvenue dans votre environnement Kata !'"
-    ],
-    "scripts": {
-      "test": "python3 -m pytest",
-      "run": "python3 main.py"
-    }
-  }
-}
-```
-
-Puis exécutez vos scripts :
-
-```bash
-devbox run test
-devbox run run
-```
-
-### Commandes Essentielles
-
-| Commande | Description |
-|----------|-------------|
-| `devbox init` | Initialise un nouveau projet DevBox |
-| `devbox add <package>` | Ajoute un package à l'environnement |
-| `devbox remove <package>` | Retire un package de l'environnement |
-| `devbox shell` | Entre dans l'environnement DevBox |
-| `devbox run <script>` | Exécute un script défini dans devbox.json |
-| `devbox search <nom>` | Recherche des packages disponibles |
-| `devbox update` | Met à jour les packages |
-| `devbox info` | Affiche les informations sur l'environnement |
-| `devbox generate` | Génère des fichiers de configuration (Dockerfile, etc.) |
-
-### Avantages de DevBox pour les Katas
-
-1. **Isolation** : Chaque kata peut avoir ses propres dépendances sans conflit
-2. **Reproductibilité** : Partagez votre `devbox.json` et tout le monde a le même environnement
-3. **Rapidité** : Pas besoin d'installer globalement tous les langages et outils
-4. **Propreté** : Supprimez le dossier du kata, l'environnement disparaît avec
-5. **Versatilité** : Testez différentes versions d'un langage sans impacter votre système
-
-## 📚 Ressources Utiles
-
-- [Documentation DevBox officielle](https://www.jetpack.io/devbox/docs/)
-- [Catalogue de packages Nix](https://search.nixos.org/packages)
-- [Exemples de Katas](https://codingdojo.org/kata/)
-- [Catalog Katas](http://codekata.com/)
-
-## 🤝 Contribution
-
-N'hésitez pas à proposer de nouvelles configurations, des branches pour d'autres langages, ou des améliorations à la documentation !
-
-## 📝 Licence
-
-Ce repository est mis à disposition pour l'apprentissage et la pratique. 
-Utilisez-le librement pour vos sessions de kata et coding dojos.
+Environnement pour katas en C# avec .NET et NUnit.
 
 ---
 
-**Happy Coding! 🥋💻**
+## 📦 Initialiser DevBox (première fois uniquement)
+
+```bash
+# Initialiser devbox
+devbox init
+
+# Ajouter .NET SDK
+devbox add dotnet-sdk_8
+
+# Entrer dans l'environnement
+devbox shell
+
+# Vérifier l'installation
+dotnet --version
+```
+
+---
+
+## 🚀 Setup du Projet
+
+```bash
+# 0. Définir le nom du projet
+PROJECT_NAME="Kata"  # Changer ici pour votre kata (ex: "FizzBuzz", "StringCalculator")
+
+# 1. Lancer DevBox (si pas déjà dans le shell)
+devbox shell
+
+# 2. Créer le projet
+dotnet new sln -n $PROJECT_NAME
+dotnet new classlib -n $PROJECT_NAME.Core
+dotnet new nunit -n $PROJECT_NAME.Tests
+dotnet sln add $PROJECT_NAME.Core $PROJECT_NAME.Tests
+cd $PROJECT_NAME.Tests && dotnet add reference ../$PROJECT_NAME.Core && cd ..
+
+# 3. Ajouter les packages de test
+cd $PROJECT_NAME.Tests
+dotnet add package Moq
+dotnet add package FluentAssertions
+dotnet add package coverlet.collector
+cd ..
+
+# 4. Lancer les tests
+dotnet test
+
+# 5. Mode watch (auto-reload)
+dotnet watch test --project $PROJECT_NAME.Tests
+```
+
+**Structure créée :**
+```
+$PROJECT_NAME/
+├── $PROJECT_NAME.Core/      → Code de production
+└── $PROJECT_NAME.Tests/     → Tests
+```
+
+---
+
+## ✏️ Exemple
+
+**Kata.Tests/CalculatorTests.cs**
+```csharp
+using NUnit.Framework;
+using FluentAssertions;
+using Kata.Core;
+
+namespace Kata.Tests;
+
+[TestFixture]
+public class CalculatorTests
+{
+    [Test]
+    public void Add_TwoNumbers_ReturnsSum()
+    {
+        var calculator = new Calculator();
+        var result = calculator.Add(2, 3);
+        result.Should().Be(5);
+    }
+}
+```
+
+**Kata.Core/Calculator.cs**
+```csharp
+namespace Kata.Core;
+
+public class Calculator
+{
+    public int Add(int a, int b) => a + b;
+}
+```
+
+---
+
+## 🧪 Guide des Outils
+
+### 1️⃣ NUnit - Framework de test
+
+```csharp
+[Test]
+public void SimpleTest() { }
+
+[TestCase(2, 3, 5)]
+[TestCase(0, 0, 0)]
+public void ParameterizedTest(int a, int b, int expected) { }
+
+[SetUp]
+public void BeforeEachTest() { }
+
+[Category("Fast")]
+public void CategorizedTest() { }
+```
+
+### 2️⃣ FluentAssertions - Assertions lisibles
+
+```csharp
+// Valeurs
+result.Should().Be(5);
+result.Should().BeGreaterThan(0);
+
+// Chaînes
+name.Should().Be("Alice");
+name.Should().Contain("lic");
+name.Should().StartWith("Al");
+
+// Collections
+list.Should().HaveCount(3);
+list.Should().Contain(x => x.Id == 1);
+list.Should().BeEmpty();
+
+// Exceptions
+Action act = () => throw new Exception();
+act.Should().Throw<Exception>();
+
+// Objets
+user.Should().BeEquivalentTo(new { Name = "Alice", Age = 30 });
+```
+
+### 3️⃣ Moq - Mocks et stubs
+
+```csharp
+// Créer un mock
+var mock = new Mock<IUserRepository>();
+
+// Setup : configurer le comportement
+mock.Setup(r => r.GetById(1))
+    .Returns(new User { Id = 1, Name = "Alice" });
+
+// Utiliser
+var service = new UserService(mock.Object);
+var user = service.GetUser(1);
+
+// Verify : vérifier les appels
+mock.Verify(r => r.GetById(1), Times.Once());
+```
+
+**Matchers utiles :**
+```csharp
+It.IsAny<int>()                    // N'importe quelle valeur
+It.Is<int>(x => x > 0)             // Condition
+It.IsInRange(1, 100, Range.Inclusive)
+```
+
+### 4️⃣ SpecFlow - Tests BDD (optionnel)
+
+**Installation :**
+```bash
+dotnet add package SpecFlow.NUnit
+dotnet add package SpecFlow.Tools.MsBuild.Generation
+```
+
+**Features/Calculator.feature**
+```gherkin
+# language: fr
+Fonctionnalité: Calculatrice
+
+Scénario: Addition de deux nombres
+  Étant donné les nombres 2 et 3
+  Quand je les additionne
+  Alors le résultat est 5
+```
+
+**StepDefinitions/CalculatorSteps.cs**
+```csharp
+[Binding]
+public class CalculatorSteps
+{
+    private int _result;
+
+    [Given(@"les nombres (.*) et (.*)")]
+    public void GivenNombres(int a, int b)
+    {
+        // Setup
+    }
+
+    [When(@"je les additionne")]
+    public void WhenAddition()
+    {
+        _result = // calcul
+    }
+
+    [Then(@"le résultat est (.*)")]
+    public void ThenResultat(int expected)
+    {
+        _result.Should().Be(expected);
+    }
+}
+```
+
+### 5️⃣ ApprovalTests - Tests de snapshot (optionnel)
+
+**Installation :**
+```bash
+dotnet add package ApprovalTests
+```
+
+**Utilisation :**
+```csharp
+[Test]
+public void GenerateReport_ProducesCorrectOutput()
+{
+    var report = GenerateReport();
+    Approvals.Verify(report);
+}
+```
+
+Au premier run, crée un fichier `.received.txt`. Si OK, renommer en `.approved.txt`.
+Les runs suivants comparent avec `.approved.txt`.
+
+### 6️⃣ Coverlet - Couverture de code
+
+```bash
+# Couverture simple
+dotnet test /p:CollectCoverage=true
+
+# Rapport HTML
+dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+dotnet tool install -g dotnet-reportgenerator-globaltool
+reportgenerator -reports:coverage.opencover.xml -targetdir:coverage-report
+open coverage-report/index.html
+```
+
+---
+
+## 🛠️ Commandes Essentielles
+
+```bash
+# Tests
+dotnet test                                          # Lancer les tests
+dotnet watch test --project $PROJECT_NAME.Tests      # Mode watch
+dotnet test --filter "Category=Fast"                 # Filtrer par catégorie
+dotnet test --logger "console;verbosity=detailed"    # Sortie détaillée
+
+# Build
+dotnet build                                         # Compiler
+dotnet clean                                         # Nettoyer
+
+# DevBox
+devbox shell                                         # Entrer dans l'env
+exit                                                 # Sortir
+devbox info                                          # Voir les packages
+```
+
+---
+
+**Bon kata ! 🥋**
