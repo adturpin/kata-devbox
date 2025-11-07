@@ -1,6 +1,6 @@
-# Kata DevBox - C# / .NET
+# Kata DevBox - Java
 
-Environnement pour katas en C# avec .NET et NUnit.
+Environnement pour katas en Java avec Maven et JUnit 5.
 
 ---
 
@@ -10,14 +10,15 @@ Environnement pour katas en C# avec .NET et NUnit.
 # Initialiser devbox
 devbox init
 
-# Ajouter .NET SDK
-devbox add dotnet-sdk_8
+# Ajouter Java et Maven
+devbox add jdk maven
 
 # Entrer dans l'environnement
 devbox shell
 
 # Vérifier l'installation
-dotnet --version
+java -version
+mvn -version
 ```
 
 ---
@@ -25,72 +26,127 @@ dotnet --version
 ## 🚀 Setup du Projet
 
 ```bash
-# 0. Définir le nom du projet
-PROJECT_NAME="Kata"  # Changer ici pour votre kata (ex: "FizzBuzz", "StringCalculator")
-
 # 1. Lancer DevBox (si pas déjà dans le shell)
 devbox shell
 
-# 2. Créer le projet
-dotnet new sln -n $PROJECT_NAME
-dotnet new classlib -n $PROJECT_NAME.Core
-dotnet new nunit -n $PROJECT_NAME.Tests
-dotnet sln add $PROJECT_NAME.Core $PROJECT_NAME.Tests
-cd $PROJECT_NAME.Tests && dotnet add reference ../$PROJECT_NAME.Core && cd ..
+# 2. Créer le projet Maven
+mvn archetype:generate \
+  -DgroupId=com.kata \
+  -DartifactId=kata \
+  -DarchetypeArtifactId=maven-archetype-quickstart \
+  -DarchetypeVersion=1.4 \
+  -DinteractiveMode=false
 
-# 3. Ajouter les packages de test
-cd $PROJECT_NAME.Tests
-dotnet add package Moq
-dotnet add package FluentAssertions
-dotnet add package coverlet.collector
-cd ..
+cd kata
+
+# 3. Remplacer le pom.xml avec les dépendances nécessaires
+cat > pom.xml << 'EOF'
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.kata</groupId>
+    <artifactId>kata</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <junit.version>5.10.1</junit.version>
+    </properties>
+
+    <dependencies>
+        <!-- JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- AssertJ (assertions fluides) -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.24.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mockito (mocks) -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.8.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.8.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.3</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+EOF
 
 # 4. Lancer les tests
-dotnet test
+mvn test
 
-# 5. Mode watch (auto-reload)
-dotnet watch test --project $PROJECT_NAME.Tests
+# 5. Mode watch (auto-reload avec maven wrapper)
+mvn compile test -Dtest.watch=true
 ```
 
 **Structure créée :**
 ```
-$PROJECT_NAME/
-├── $PROJECT_NAME.Core/      → Code de production
-└── $PROJECT_NAME.Tests/     → Tests
+kata/
+├── src/
+│   ├── main/java/com/kata/     → Code de production
+│   └── test/java/com/kata/     → Tests
+└── pom.xml                     → Configuration Maven
 ```
 
 ---
 
 ## ✏️ Exemple
 
-**Kata.Tests/CalculatorTests.cs**
-```csharp
-using NUnit.Framework;
-using FluentAssertions;
-using Kata.Core;
+**src/test/java/com/kata/CalculatorTest.java**
+```java
+package com.kata;
 
-namespace Kata.Tests;
+import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
-[TestFixture]
-public class CalculatorTests
-{
-    [Test]
-    public void Add_TwoNumbers_ReturnsSum()
-    {
-        var calculator = new Calculator();
-        var result = calculator.Add(2, 3);
-        result.Should().Be(5);
+class CalculatorTest {
+
+    @Test
+    void add_twoNumbers_returnsSum() {
+        Calculator calculator = new Calculator();
+        int result = calculator.add(2, 3);
+        assertThat(result).isEqualTo(5);
     }
 }
 ```
 
-**Kata.Core/Calculator.cs**
-```csharp
-namespace Kata.Core;
+**src/main/java/com/kata/Calculator.java**
+```java
+package com.kata;
 
-public class Calculator
-{
-    public int Add(int a, int b) => a + b;
+public class Calculator {
+    public int add(int a, int b) {
+        return a + b;
+    }
 }
 ```
 
@@ -98,82 +154,118 @@ public class Calculator
 
 ## 🧪 Guide des Outils
 
-### 1️⃣ NUnit - Framework de test
+### 1️⃣ JUnit 5 - Framework de test
 
-```csharp
-[Test]
-public void SimpleTest() { }
+```java
+@Test
+void simpleTest() { }
 
-[TestCase(2, 3, 5)]
-[TestCase(0, 0, 0)]
-public void ParameterizedTest(int a, int b, int expected) { }
+@ParameterizedTest
+@CsvSource({"2, 3, 5", "0, 0, 0"})
+void parameterizedTest(int a, int b, int expected) { }
 
-[SetUp]
-public void BeforeEachTest() { }
+@BeforeEach
+void beforeEachTest() { }
 
-[Category("Fast")]
-public void CategorizedTest() { }
+@Tag("Fast")
+@Test
+void categorizedTest() { }
+
+@DisplayName("Addition de deux nombres")
+@Test
+void testWithDisplayName() { }
 ```
 
-### 2️⃣ FluentAssertions - Assertions lisibles
+### 2️⃣ AssertJ - Assertions lisibles
 
-```csharp
+```java
 // Valeurs
-result.Should().Be(5);
-result.Should().BeGreaterThan(0);
+assertThat(result).isEqualTo(5);
+assertThat(result).isGreaterThan(0);
 
 // Chaînes
-name.Should().Be("Alice");
-name.Should().Contain("lic");
-name.Should().StartWith("Al");
+assertThat(name).isEqualTo("Alice");
+assertThat(name).contains("lic");
+assertThat(name).startsWith("Al");
 
 // Collections
-list.Should().HaveCount(3);
-list.Should().Contain(x => x.Id == 1);
-list.Should().BeEmpty();
+assertThat(list).hasSize(3);
+assertThat(list).anyMatch(x -> x.getId() == 1);
+assertThat(list).isEmpty();
 
 // Exceptions
-Action act = () => throw new Exception();
-act.Should().Throw<Exception>();
+assertThatThrownBy(() -> { throw new Exception(); })
+    .isInstanceOf(Exception.class);
 
 // Objets
-user.Should().BeEquivalentTo(new { Name = "Alice", Age = 30 });
+assertThat(user)
+    .hasFieldOrPropertyWithValue("name", "Alice")
+    .hasFieldOrPropertyWithValue("age", 30);
 ```
 
-### 3️⃣ Moq - Mocks et stubs
+### 3️⃣ Mockito - Mocks et stubs
 
-```csharp
+```java
 // Créer un mock
-var mock = new Mock<IUserRepository>();
+UserRepository mock = mock(UserRepository.class);
 
 // Setup : configurer le comportement
-mock.Setup(r => r.GetById(1))
-    .Returns(new User { Id = 1, Name = "Alice" });
+when(mock.getById(1))
+    .thenReturn(new User(1, "Alice"));
 
 // Utiliser
-var service = new UserService(mock.Object);
-var user = service.GetUser(1);
+UserService service = new UserService(mock);
+User user = service.getUser(1);
 
 // Verify : vérifier les appels
-mock.Verify(r => r.GetById(1), Times.Once());
+verify(mock, times(1)).getById(1);
 ```
 
 **Matchers utiles :**
-```csharp
-It.IsAny<int>()                    // N'importe quelle valeur
-It.Is<int>(x => x > 0)             // Condition
-It.IsInRange(1, 100, Range.Inclusive)
+```java
+any()                              // N'importe quelle valeur
+anyInt()                           // N'importe quel int
+argThat(x -> x > 0)                // Condition personnalisée
+eq(5)                              // Égalité exacte
 ```
 
-### 4️⃣ SpecFlow - Tests BDD (optionnel)
+**Avec annotations :**
+```java
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+    @Mock
+    UserRepository repository;
 
-**Installation :**
-```bash
-dotnet add package SpecFlow.NUnit
-dotnet add package SpecFlow.Tools.MsBuild.Generation
+    @InjectMocks
+    UserService service;
+
+    @Test
+    void test() {
+        when(repository.getById(1)).thenReturn(new User(1, "Alice"));
+        // test...
+    }
+}
 ```
 
-**Features/Calculator.feature**
+### 4️⃣ Cucumber - Tests BDD (optionnel)
+
+**Installation (ajouter au pom.xml) :**
+```xml
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-java</artifactId>
+    <version>7.15.0</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-junit-platform-engine</artifactId>
+    <version>7.15.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+**src/test/resources/features/calculator.feature**
 ```gherkin
 # language: fr
 Fonctionnalité: Calculatrice
@@ -184,64 +276,89 @@ Scénario: Addition de deux nombres
   Alors le résultat est 5
 ```
 
-**StepDefinitions/CalculatorSteps.cs**
-```csharp
-[Binding]
-public class CalculatorSteps
-{
-    private int _result;
+**src/test/java/com/kata/steps/CalculatorSteps.java**
+```java
+package com.kata.steps;
 
-    [Given(@"les nombres (.*) et (.*)")]
-    public void GivenNombres(int a, int b)
-    {
+import io.cucumber.java.fr.*;
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class CalculatorSteps {
+    private int result;
+
+    @Etantdonné("les nombres {int} et {int}")
+    public void lesNombres(int a, int b) {
         // Setup
     }
 
-    [When(@"je les additionne")]
-    public void WhenAddition()
-    {
-        _result = // calcul
+    @Quand("je les additionne")
+    public void jeAdditionne() {
+        result = // calcul
     }
 
-    [Then(@"le résultat est (.*)")]
-    public void ThenResultat(int expected)
-    {
-        _result.Should().Be(expected);
+    @Alors("le résultat est {int}")
+    public void leResultatEst(int expected) {
+        assertThat(result).isEqualTo(expected);
     }
 }
 ```
 
 ### 5️⃣ ApprovalTests - Tests de snapshot (optionnel)
 
-**Installation :**
-```bash
-dotnet add package ApprovalTests
+**Installation (ajouter au pom.xml) :**
+```xml
+<dependency>
+    <groupId>com.approvaltests</groupId>
+    <artifactId>approvaltests</artifactId>
+    <version>22.3.3</version>
+    <scope>test</scope>
+</dependency>
 ```
 
 **Utilisation :**
-```csharp
-[Test]
-public void GenerateReport_ProducesCorrectOutput()
-{
-    var report = GenerateReport();
-    Approvals.Verify(report);
+```java
+@Test
+void generateReport_producesCorrectOutput() {
+    String report = generateReport();
+    Approvals.verify(report);
 }
 ```
 
 Au premier run, crée un fichier `.received.txt`. Si OK, renommer en `.approved.txt`.
 Les runs suivants comparent avec `.approved.txt`.
 
-### 6️⃣ Coverlet - Couverture de code
+### 6️⃣ JaCoCo - Couverture de code
 
+**Configuration (ajouter au pom.xml) :**
+```xml
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.11</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>prepare-agent</goal>
+            </goals>
+        </execution>
+        <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+                <goal>report</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+**Utilisation :**
 ```bash
-# Couverture simple
-dotnet test /p:CollectCoverage=true
+# Lancer les tests avec couverture
+mvn clean test
 
-# Rapport HTML
-dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
-dotnet tool install -g dotnet-reportgenerator-globaltool
-reportgenerator -reports:coverage.opencover.xml -targetdir:coverage-report
-open coverage-report/index.html
+# Voir le rapport HTML
+open target/site/jacoco/index.html
 ```
 
 ---
@@ -250,14 +367,19 @@ open coverage-report/index.html
 
 ```bash
 # Tests
-dotnet test                                          # Lancer les tests
-dotnet watch test --project $PROJECT_NAME.Tests      # Mode watch
-dotnet test --filter "Category=Fast"                 # Filtrer par catégorie
-dotnet test --logger "console;verbosity=detailed"    # Sortie détaillée
+mvn test                                             # Lancer les tests
+mvn test -Dtest=CalculatorTest                       # Lancer un test spécifique
+mvn test -Dgroups=Fast                               # Filtrer par tag
+mvn test -X                                          # Sortie détaillée (debug)
 
 # Build
-dotnet build                                         # Compiler
-dotnet clean                                         # Nettoyer
+mvn compile                                          # Compiler
+mvn clean                                            # Nettoyer
+mvn package                                          # Créer le JAR
+
+# Autres
+mvn dependency:tree                                  # Voir les dépendances
+mvn help:effective-pom                               # Voir le POM effectif
 
 # DevBox
 devbox shell                                         # Entrer dans l'env
